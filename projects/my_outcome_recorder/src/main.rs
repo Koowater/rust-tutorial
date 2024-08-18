@@ -39,8 +39,16 @@ fn get_prompt_input(prompt: &str) -> io::Result<String> {
     Ok(input.trim().to_string())
 }
 
+fn print_outcome_list(outcome_list: &Vec<Outcome>) -> Result<(), Box<dyn Error>> {
+    println!(" 📜 현재 지출 항목 수 : {}개", outcome_list.len());
+    for outcome in outcome_list {
+        println!("     * {}: {}", outcome.name, outcome.cost);
+    }
+    Ok(())
+}
+ 
 // Read csv table that recorded outcome history
-fn read_record(outcome_list: &mut Vec<Outcome>) -> io::Result<(),> {
+fn read_record(outcome_list: &mut Vec<Outcome>) -> Result<(), Box<dyn Error>>{
     let csv_path = "./outcome_list.csv";
     let file = File::open(csv_path)?;
     let mut rdr = csv::Reader::from_reader(file);
@@ -106,6 +114,12 @@ fn main() {
         }; 
 
         match job_number {
+            0 => {
+                match print_outcome_list(&outcome_list) {
+                    Ok(_) => continue,
+                    Err(e) => println!("지출 기록을 출력할 수 없습니다. {}", e),
+                }
+            }
             1 => {
                 let input = match get_prompt_input(" 💲 지출 비용 입력 {지출명/지출금액} \n >>> ") {
                     Ok(text) => text,
@@ -128,9 +142,10 @@ fn main() {
                 }
             },
             2 => {
+                outcome_list.clear();
                 match read_record(&mut outcome_list) {
                     Ok(_) => {
-                        println!("지출 기록을 성공적으로 불러왔습니다.\n{:?}", outcome_list);
+                        println!("지출 기록을 성공적으로 불러왔습니다. (불러온 지출 항목 수 : {}개)", outcome_list.len());
                         continue;
                     },
                     Err(e) => println!("지출 기록을 불러올 수 없습니다. {}", e),
